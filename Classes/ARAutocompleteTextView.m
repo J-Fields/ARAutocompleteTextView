@@ -14,8 +14,10 @@ static NSObject<ARAutocompleteDataSource> *DefaultAutocompleteDataSource = nil;
 
 @interface ARAutocompleteTextView ()
 
+@property (nonatomic, strong) NSString *fullAutocompleteString;
 @property (nonatomic, strong) NSString *autocompleteString;
 @property (nonatomic, assign) BOOL autocompleted;
+@property (nonatomic, assign) BOOL justAutocompleted;
 
 @end
 
@@ -67,6 +69,8 @@ static NSObject<ARAutocompleteDataSource> *DefaultAutocompleteDataSource = nil;
     self.autocompleted = NO;
     
     self.ignoreCase = YES;
+    
+    self.justAutocompleted = NO;
     
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(ar_textDidChange:) name:UITextViewTextDidChangeNotification object:self];
 }
@@ -162,17 +166,28 @@ static NSObject<ARAutocompleteDataSource> *DefaultAutocompleteDataSource = nil;
         
         if (dataSource)
         {
-            self.autocompleteString = [dataSource textView:self completionForPrefix:self.text ignoreCase:self.ignoreCase];
+            self.fullAutocompleteString = [dataSource textView:self completionForPrefix:self.text ignoreCase:self.ignoreCase];
+            NSRange deletionRange = [self.fullAutocompleteString rangeOfString:self.text options:NSCaseInsensitiveSearch];
+            if (deletionRange.length == 0 || self.justAutocompleted)
+            {
+                self.autocompleteString = @"";
+            }
+            else
+            {
+                self.autocompleteString = [self.fullAutocompleteString stringByReplacingCharactersInRange:deletionRange withString:@""];
+            }
 
             if (self.autocompleteString.length > 0)
             {
-                if ([self.text hasSuffix:@" "]) {
+                if ([self.text hasSuffix:@" "] && !self.justAutocompleted) {
                     self.text = [self.text substringToIndex:[self.text length] - 1];
                     [self autocompleteText:self];
                 }
             }
             
             [self updateAutocompleteLabel];
+            
+            self.justAutocompleted = NO;
         }
     }
 }
@@ -180,11 +195,19 @@ static NSObject<ARAutocompleteDataSource> *DefaultAutocompleteDataSource = nil;
 - (BOOL)commitAutocompleteText
 {
     NSString *currentText = self.text;
-    if (self.autocompleteString && [self.autocompleteString isEqualToString:@""] == NO
-        && self.autocompleteDisabled == NO)
+    if (self.autocompleteString && self.autocompleteDisabled == NO)
     {
-        self.text = [NSString stringWithFormat:@"%@%@", self.text, self.autocompleteString];
+        NSArray *words = [self.text componentsSeparatedByString:@" "];
+        NSString *newText = @"";
+        for (int i = 0; i < [words count] - 1; i++) {
+            newText = [NSString stringWithFormat:@"%@%@ ", newText, [words objectAtIndex:i]];
+        }
+        newText = [NSString stringWithFormat:@"%@%@ ", newText, [[self.fullAutocompleteString componentsSeparatedByString:@" "] lastObject]];
         
+        self.text = newText;
+        self.justAutocompleted = YES;
+        
+        self.fullAutocompleteString = @"";
         self.autocompleteString = @"";
         [self updateAutocompleteLabel];
 		
