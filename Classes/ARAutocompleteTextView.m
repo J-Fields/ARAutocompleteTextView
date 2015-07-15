@@ -195,7 +195,7 @@ static NSObject<ARAutocompleteDataSource> *DefaultAutocompleteDataSource = nil;
 - (BOOL)commitAutocompleteText
 {
     NSString *currentText = self.text;
-    if (self.autocompleteString && self.autocompleteDisabled == NO)
+    if (self.autocompleteString && self.fullAutocompleteString && self.autocompleteDisabled == NO)
     {
         NSArray *words = [self.text componentsSeparatedByString:@" "];
         NSString *newText = @"";
