@@ -105,23 +105,6 @@ static NSObject<ARAutocompleteDataSource> *DefaultAutocompleteDataSource = nil;
     return [super becomeFirstResponder];
 }
 
-- (BOOL)resignFirstResponder
-{
-    if (!self.autocompleteDisabled)
-    {
-        self.autocompleteLabel.hidden = YES;
-
-        if ([self commitAutocompleteText]) {
-            // Only notify if committing autocomplete actually changed the text.
-        
-
-            // This is necessary because committing the autocomplete text changes the text field's text, but for some reason UITextView doesn't post the UITextViewTextDidChangeNotification notification on its own
-            [[NSNotificationCenter defaultCenter] postNotificationName:UITextViewTextDidChangeNotification object:self];
-        }
-    }
-    return [super resignFirstResponder];
-}
-
 #pragma mark - Autocomplete Logic
 
 - (CGRect)autocompleteRectForBounds:(CGRect)bounds
@@ -195,7 +178,7 @@ static NSObject<ARAutocompleteDataSource> *DefaultAutocompleteDataSource = nil;
 - (BOOL)commitAutocompleteText
 {
     NSString *currentText = self.text;
-    if (self.autocompleteString && self.fullAutocompleteString && self.autocompleteDisabled == NO)
+    if (self.autocompleteString && self.fullAutocompleteString && self.fullAutocompleteString.length > 0 && self.autocompleteDisabled == NO)
     {
         NSArray *words = [self.text componentsSeparatedByString:@" "];
         NSString *newText = @"";
